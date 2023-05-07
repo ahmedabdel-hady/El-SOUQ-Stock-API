@@ -10,11 +10,10 @@ import requests
 import constants
 import json
 
-API_KEY = st.secrets["NEWS_API_KEY"]
 countries = constants.countries
 
 
-def business_news_feed(API_KEY):
+def business_news_feed():
     select_country = st.sidebar.selectbox("Select Country: ", countries.keys())
     st.header('NEWS FEED')
     r = requests.get('https://newsapi.org/v2/top-headlines?country=' + countries[select_country] + '&category=business&apikey=' + api_key)
@@ -38,7 +37,11 @@ def business_news_feed(API_KEY):
         url = data_news['articles'][i]['url']
         st.write(url)
 
+# Replace 'api_key' with your actual API key
+api_key = '6632eb3c53e643c1b7223c228facde4d'
 
+# Call the function with the API key
+business_news_feed(api_key)
 
 def isLeapYear(y):
     return (y % 4 == 0 and y % 100 != 0) or (y % 400 == 0)
