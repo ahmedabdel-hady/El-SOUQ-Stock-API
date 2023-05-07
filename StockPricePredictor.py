@@ -13,7 +13,7 @@ import json
 countries = constants.countries
 
 
-def business_news_feed(config.NEWS_API_KEY):
+def business_news_feed(api_key):
     select_country = st.sidebar.selectbox("Select Country: ", countries.keys())
     st.header('NEWS FEED')
     r = requests.get('https://newsapi.org/v2/top-headlines?country=' + countries[select_country] + '&category=business&apikey=' + api_key)
