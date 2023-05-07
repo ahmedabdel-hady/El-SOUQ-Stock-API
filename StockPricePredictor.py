@@ -140,7 +140,7 @@ def predictingTheStockPrices():
     df_train = df_train.rename(columns={"date": "ds", "close": "y"})
     
     # Convert 'y' column to float
-    df_train['y'] = df_train['y'].astype(float)
+    df_train['y'] = df_train['y'].astype(np.float64)
 
     model_param = {
         "daily_seasonality": False,
