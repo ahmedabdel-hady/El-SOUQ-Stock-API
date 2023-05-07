@@ -38,11 +38,6 @@ def business_news_feed(api_key):
         url = data_news['articles'][i]['url']
         st.write(url)
 
- # Replace 'api_key' with your actual API key
-api_key = '6632eb3c53e643c1b7223c228facde4d'
-
-# Call the function with the API key
-business_news_feed(api_key)
 
 
 def isLeapYear(y):
