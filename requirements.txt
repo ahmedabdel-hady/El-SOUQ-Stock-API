@@ -9,4 +9,3 @@ requests~=2.27.1
 datetime~=4.4
 holidays==0.13
 yahooquery==2.3.0
-numpy
