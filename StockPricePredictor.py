@@ -5,7 +5,7 @@ from fbprophet import Prophet
 from fbprophet.plot import plot_plotly
 import pandas as pd
 from plotly import graph_objs as go
-import config
+#import config
 import requests
 import constants
 import json
