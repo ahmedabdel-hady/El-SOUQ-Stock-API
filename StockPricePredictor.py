@@ -10,7 +10,6 @@ import requests
 import constants
 import json
 
-API_KEY = st.secrets["NEWS_API_KEY"]
 countries = constants.countries
 
 
