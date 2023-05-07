@@ -10,15 +10,13 @@ import requests
 import constants
 import json
 
-API_KEY = st.secrets["NEWS_API_KEY"]
 countries = constants.countries
 
 
-def business_news_feed():
+def business_news_feed(api_key):
     select_country = st.sidebar.selectbox("Select Country: ", countries.keys())
     st.header('NEWS FEED')
-    r = requests.get('https://newsapi.org/v2/top-headlines?country=' + countries[
-        select_country] + '&category=business&apikey=' + API_KEY)
+    r = requests.get('https://newsapi.org/v2/top-headlines?country=' + countries[select_country] + '&category=business&apikey=' + api_key)
     data_news = json.loads(r.content)
     length = min(15, len(data_news['articles']))
     for i in range(length):
@@ -38,6 +36,7 @@ def business_news_feed():
 
         url = data_news['articles'][i]['url']
         st.write(url)
+
 
 
 def isLeapYear(y):
