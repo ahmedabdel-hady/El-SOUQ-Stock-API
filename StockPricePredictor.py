@@ -141,6 +141,7 @@ def predictingTheStockPrices():
 
     df_train = data[['date', 'close']]
     df_train = df_train.rename(columns={"date": "ds", "close": "y"})
+    df_train = df_train.dropna()
     
     # Convert 'y' column to float
     df_train['y'] = df_train['y'].astype(float)
@@ -159,6 +160,7 @@ def predictingTheStockPrices():
     m = m.add_seasonality(name="quarterly", period=92.25, fourier_order=10)
 
     df_train['cap'] = df_train["y"].max() + df_train["y"].std() * 0.05
+     # Fit the model with the modified df_train
     m.fit(df_train)
     future = m.make_future_dataframe(periods=period)
     future['cap'] = df_train['cap'].max()
