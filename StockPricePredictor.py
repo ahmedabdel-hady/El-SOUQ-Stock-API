@@ -5,18 +5,20 @@ from fbprophet import Prophet
 from fbprophet.plot import plot_plotly
 import pandas as pd
 from plotly import graph_objs as go
-import config
+#import config
 import requests
 import constants
 import json
 
+API_KEY = st.secrets["NEWS_API_KEY"]
 countries = constants.countries
 
 
 def business_news_feed():
     select_country = st.sidebar.selectbox("Select Country: ", countries.keys())
     st.header('NEWS FEED')
-    r = requests.get('https://newsapi.org/v2/top-headlines?country=' + countries[select_country] + '&category=business&apikey=' + api_key)
+    r = requests.get('https://newsapi.org/v2/top-headlines?country=' + countries[
+        select_country] + '&category=business&apikey=' + API_KEY)
     data_news = json.loads(r.content)
     length = min(15, len(data_news['articles']))
     for i in range(length):
@@ -36,7 +38,6 @@ def business_news_feed():
 
         url = data_news['articles'][i]['url']
         st.write(url)
-
 
 
 def isLeapYear(y):
@@ -174,7 +175,7 @@ START = "2016-01-01"
 TODAY = date.today().strftime("%Y-%m-%d")
 year = int(TODAY[: 4])
 
-st.title('El SOUQ API: STOCK FORECAST APP')
+st.title('STOCKIFY: STOCK FORECAST APP')
 
 try:
     option = st.sidebar.selectbox("Which Dashboard?", ('Past Trends', 'Predict Stock Price', 'Trending Business News'),
