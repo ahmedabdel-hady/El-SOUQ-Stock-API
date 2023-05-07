@@ -174,7 +174,7 @@ START = "2016-01-01"
 TODAY = date.today().strftime("%Y-%m-%d")
 year = int(TODAY[: 4])
 
-st.title('STOCKIFY: STOCK FORECAST APP')
+st.title('ElSOUQ: STOCK FORECAST APP')
 
 try:
     option = st.sidebar.selectbox("Which Dashboard?", ('Past Trends', 'Predict Stock Price', 'Trending Business News'),
