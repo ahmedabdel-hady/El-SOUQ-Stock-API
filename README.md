@@ -3,7 +3,7 @@
 <br />
 <div align="center">
   <a href="http://elsouq-stock.geeksy.tech/">
-    <img src="![image](https://user-images.githubusercontent.com/47082945/236728853-5953eb93-6d71-4883-ba3c-3df676e45e56.png)" width="200" alt="Logo">
+    <img src="![image](http://elsouq-stock.geeksy.tech/assets/img/logo.png)" width="200" alt="Logo">
   </a>
 
   <h3 align="center">El-SOUQ Web App</h3>
