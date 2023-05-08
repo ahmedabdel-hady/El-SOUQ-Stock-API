@@ -14,6 +14,6 @@
     <a href="http://elsouq-stock.geeksy.tech/"><strong>Explore landing page »</strong></a>
     <br />
     <br />
-    <a href="https://ahmedabdel-hady-el-souq-stock-api-stockpricepredictor-1ymm0y.streamlit.app/">Demo</a>
+    <a href="https://ahmedabdelhady-elsouq-stock.streamlit.app/">Demo</a>
   </p>
 </div>
