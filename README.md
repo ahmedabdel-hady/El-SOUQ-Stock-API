@@ -11,9 +11,8 @@
   <p align="center">
     El SOUQ, a powerful web-app that accurately predicts stock prices for the next 4 years based on the social media effects!
     <br />
-    <a href="http://elsouq-stock.geeksy.tech/"><strong>Explore landing page »</strong></a>
+    <a href="http://elsouq-stock.geeksy.tech/"><strong>Explore Demo »</strong></a>
     <br />
     <br />
-    <a href="https://ahmedabdelhady-elsouq-stock.streamlit.app/">Demo</a>
   </p>
 </div>
