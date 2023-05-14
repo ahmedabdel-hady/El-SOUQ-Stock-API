@@ -26,7 +26,7 @@ El SOUQ, a powerful web-app that accurately predicts stock prices for the next 4
 - **Forecasting Library**: Facebook Prophet
 - **API Integration**: Yahoo Finance API
 - **Web Scraping**: Requests
-- **Deployment**: Heroku
+- **Deployment**: Streamlit
 
 ## Key Features
 
