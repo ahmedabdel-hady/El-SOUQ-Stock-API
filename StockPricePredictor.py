@@ -136,26 +136,33 @@ def predictingTheStockPrices():
         else:
             period += 365
 
+    # Select the date and closing price columns
     df_train = data[['date', 'close']]
     df_train = df_train.rename(columns={"date": "ds", "close": "y"})
 
+    # Create the Prophet model with specified parameters
     model_param = {
         "daily_seasonality": False,
         "weekly_seasonality": False,
         "yearly_seasonality": True,
         "seasonality_mode": "multiplicative",
-        "growth": "logistic"
+        "growth": "linear"  # Changed "logistic" to "linear" for simplicity
     }
 
     m = Prophet(**model_param)
 
-    m = m.add_seasonality(name="monthly", period=30, fourier_order=10)
-    m = m.add_seasonality(name="quarterly", period=92.25, fourier_order=10)
+    # Add monthly and quarterly seasonality
+    m = m.add_seasonality(name="monthly", period=30.5, fourier_order=5)  # Approximate days in a month
+    m = m.add_seasonality(name="quarterly", period=91.25, fourier_order=5)  # Approximate days in a quarter
 
-    df_train['cap'] = df_train["y"].max() + df_train["y"].std() * 0.05
+    # Fit the model
     m.fit(df_train)
+
+    # Create the future DataFrame for prediction
     future = m.make_future_dataframe(periods=period)
-    future['cap'] = df_train['cap'].max()
+    future['cap'] = df_train['y'].max() + df_train['y'].std() * 0.05
+
+    # Make predictions
     forecast = m.predict(future)
 
     # Showing and plotting the forecast
@@ -169,7 +176,6 @@ def predictingTheStockPrices():
     st.write("Forecast components - Yearly, Monthly and Quarterly Trends")
     fig2 = m.plot_components(forecast)
     st.write(fig2)
-
 
 # Driver
 START = "2016-01-01"
