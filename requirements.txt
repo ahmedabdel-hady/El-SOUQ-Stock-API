@@ -1,8 +1,8 @@
 Cython>=0.22
-pystan==2.19.1.1
+pystan
 fbprophet
 plotly==5.5.0
-streamlit==1.20.0
+streamlit
 click==8
 pandas>=1.0.4
 requests~=2.27.1
