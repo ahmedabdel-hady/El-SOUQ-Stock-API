@@ -1,8 +1,8 @@
 import streamlit as st
 from datetime import date
 from yahooquery import Ticker
-from prophet import Prophet
-from prophet.plot import plot_plotly
+from fbprophet import Prophet
+from fbprophet.plot import plot_plotly
 import pandas as pd
 from plotly import graph_objs as go
 import config
