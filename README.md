@@ -3,7 +3,7 @@
 <br />
 <div align="center">
   <a href="http://elsouq-stock.abdelhady.me">
-    <img src="http://abdelhady.me/assets/img/logo.png" width="200" alt="Logo">
+    <img src="http://elsouq.abdelhady.me/assets/img/logo.png" width="200" alt="Logo">
   </a>
 
   <h3 align="center">El-SOUQ Web App</h3>
