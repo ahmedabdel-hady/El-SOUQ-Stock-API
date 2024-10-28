@@ -9,6 +9,15 @@ import requests
 import constants
 import json
 import yfinance as yf
+import tempfile
+import os
+
+# Set up a temporary directory for the yfinance cache to avoid lock issues
+temp_dir = tempfile.mkdtemp()
+os.environ["YF_CACHE_DIR"] = temp_dir
+
+# Alternatively, to disable caching completely
+yf.set_caching(False)
 
 countries = constants.countries
 
