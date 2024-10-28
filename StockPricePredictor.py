@@ -16,9 +16,6 @@ import os
 temp_dir = tempfile.mkdtemp()
 os.environ["YF_CACHE_DIR"] = temp_dir
 
-# Alternatively, to disable caching completely
-yf.set_caching(False)
-
 countries = constants.countries
 
 def business_news_feed():
@@ -35,8 +32,6 @@ def business_news_feed():
         try:
             st.image(image)
         except:
-            pass
-        else:
             pass
 
         content = data_news['articles'][i]['content']
