@@ -1,11 +1,10 @@
 Cython>=0.22
-pystan==2.19.1.1
-fbprophet==0.7.1  # or another version you've tested with
+prophet  # Replaces fbprophet and pystan
 plotly==5.5.0
 streamlit==1.20.0
-click==8.0.0  # specify a minor version if needed
-pandas==1.2.0  # or another version you've tested with
+click>=8.0.0,<9.0
+pandas==1.5.3
 requests==2.27.1
-datetime==4.4  # or another version you've tested with
+datetime  # No need to pin a specific version unless required
 holidays==0.13
 yahooquery==2.3.2
