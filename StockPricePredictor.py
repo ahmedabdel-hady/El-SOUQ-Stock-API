@@ -8,6 +8,7 @@ from plotly import graph_objs as go
 import config
 import constants
 import json
+from curl_cffi import requests as curl_requests  # Importing curl_cffi for the requests module
 
 countries = constants.countries
 
@@ -42,17 +43,31 @@ def isLeapYear(y):
 def sideBarHelper(text):
     st.sidebar.text(text)
 
-def populateSideBar():
-    st.sidebar.header(selection.info['longName'])
-    sideBarHelper("Sector: " + selection.info['sector'])
-    sideBarHelper("Financial Currency: " + selection.info['currency'])
-    sideBarHelper("Exchange: " + selection.info['exchange'])
-    sideBarHelper("Timezone: " + selection.info['timezone'])
-    url = selection.info['website']
-    st.sidebar.markdown("[Visit website](%s)" % url)
-    st.sidebar.success(selection.recommendations['buyHoldSell'].capitalize())
+def populateSideBar(selection):
+    # Fetch the info first after loading data with yfinance
+    company_info = selection.info
+    
+    # Check if 'longName' exists in company info
+    if 'longName' in company_info:
+        st.sidebar.header(company_info['longName'])
+    else:
+        st.sidebar.header("Company Info Not Available")
+    
+    sideBarHelper("Sector: " + company_info.get('sector', 'N/A'))
+    sideBarHelper("Financial Currency: " + company_info.get('currency', 'N/A'))
+    sideBarHelper("Exchange: " + company_info.get('exchange', 'N/A'))
+    sideBarHelper("Timezone: " + company_info.get('timezone', 'N/A'))
+    
+    url = company_info.get('website', 'N/A')
+    if url != 'N/A':
+        st.sidebar.markdown(f"[Visit website](%s)" % url)
+    else:
+        st.sidebar.text("Website Not Available")
+    
+    recommendation = company_info.get('buyHoldSell', 'N/A')
+    st.sidebar.success(recommendation.capitalize() if recommendation != 'N/A' else "Recommendation Not Available")
 
-def stockPricesToday():
+def stockPricesToday(selection):
     today_data = {'Current Price': [selection.history(period='1d')['Close'].iloc[-1]],
                   'Previous Close': [selection.history(period='1d')['Close'].iloc[-2]],
                   'Open': [selection.history(period='1d')['Open'].iloc[-1]],
@@ -67,8 +82,8 @@ def stockPricesToday():
     col1.metric(label="Current Price, Change w.r.t Opening Price", value='%.2f' % selection.history(period='1d')['Close'].iloc[-1],
                 delta='%.2f' % priceChangeToday)
 
-    priceChangeYesterday = data['close'][len(data) - 1] - data['close'][len(data) - 2] if len(data) >= 2 else 0
-    col2.metric(label="Previous Closing, Previous Day Change", value='%.2f' % data['close'][len(data) - 1],
+    priceChangeYesterday = df['Close'][len(df) - 1] - df['Close'][len(df) - 2] if len(df) >= 2 else 0
+    col2.metric(label="Previous Closing, Previous Day Change", value='%.2f' % df['Close'].iloc[-1],
                 delta='%.2f' % priceChangeYesterday)
 
     st.dataframe(df)
@@ -77,8 +92,12 @@ def stockPricesToday():
 def load_data(symbol):
     data = yf.Ticker(symbol)
     historic_data = data.history(period="1y")  # Fetch data for 1 year by default
-    historic_data.reset_index(inplace=True)
-    return historic_data
+    
+    if historic_data.empty:
+        st.warning(f"No data available for {symbol}. Please check the symbol.")
+        return pd.DataFrame()  # Return empty DataFrame if no data is available
+    
+    return data  # Return the ticker object for later use in populateSideBar
 
 def plot_raw_data():
     fig = go.Figure()
@@ -94,14 +113,14 @@ def plot_raw_data():
     fig.layout.update(title_text='Candle Stick Chart - Past 30 Days Trend', xaxis_rangeslider_visible=True)
     st.plotly_chart(fig)
 
-def pastTrends():
+def pastTrends(selection):
     st.info(selection.info['longBusinessSummary'])
     st.subheader('Today')
-    stockPricesToday()
+    stockPricesToday(selection)
     st.subheader('Last 5 Days Trend')
     st.write(data.tail())
 
-def predictingTheStockPrices():
+def predictingTheStockPrices(selection):
     period = 0
     n_years = st.slider('Years of prediction:', 1, 4)
 
@@ -154,35 +173,38 @@ try:
     stock = st.sidebar.text_input("Symbol", value='GOOG')
     selected_stock = stock
 
+    # Load the stock data
     data = load_data(selected_stock)
 
-    if option == 'Past Trends':
-        company_name = selected_stock
-        st.subheader(company_name + "'s Stocks")
-        populateSideBar()
-        pastTrends()
-        plot_raw_data()
+    if data.empty:
+        st.warning("No data found for this symbol. Please try another symbol.")
+    else:
+        if option == 'Past Trends':
+            company_name = selected_stock
+            st.subheader(company_name + "'s Stocks")
+            populateSideBar(data)  # Pass the data to the sidebar function
+            pastTrends(data)
 
-    if option == 'Predict Stock Price':
-        company_name = selected_stock
-        st.subheader(company_name + "'s Stocks")
-        populateSideBar()
-        predictingTheStockPrices()
+        if option == 'Predict Stock Price':
+            company_name = selected_stock
+            st.subheader(company_name + "'s Stocks")
+            populateSideBar(data)  # Pass the data to the sidebar function
+            predictingTheStockPrices(data)
 
-    if option == 'Trending Business News':
-        business_news_feed()
+        if option == 'Trending Business News':
+            business_news_feed()
 
 except KeyError:
-    st.error('This company is not listed !')
+    st.error('This company is not listed!')
 
 except FileNotFoundError:
-    st.error('No data is available about this stock !')
+    st.error('No data is available about this stock!')
 
 except TypeError:
-    st.error('No data is available about this stock !')
+    st.error('No data is available about this stock!')
 
 except ValueError:
-    st.error('Symbol cannot be empty !')
+    st.error('Symbol cannot be empty!')
 
 except ConnectionError:
     st.error('Could not connect to the internet :(')
