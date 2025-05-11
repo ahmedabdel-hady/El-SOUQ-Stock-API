@@ -1,15 +1,13 @@
 import streamlit as st
 from datetime import date
-from yahooquery import Ticker
+import yfinance as yf  # Import yfinance instead of yahooquery
 from prophet import Prophet
 from prophet.plot import plot_plotly
 import pandas as pd
 from plotly import graph_objs as go
 import config
-import requests
 import constants
 import json
-from curl_cffi import requests as curl_requests  # Importing curl_cffi for the requests module
 
 countries = constants.countries
 
@@ -45,28 +43,28 @@ def sideBarHelper(text):
     st.sidebar.text(text)
 
 def populateSideBar():
-    st.sidebar.header(selection.price[selected_stock]['shortName'])
-    sideBarHelper("Sector: " + selection.summary_profile[selected_stock]['sector'])
-    sideBarHelper("Financial Currency: " + selection.financial_data[selected_stock]['financialCurrency'])
-    sideBarHelper("Exchange: " + selection.price[selected_stock]['exchangeName'])
-    sideBarHelper("Timezone: " + selection.quote_type[selected_stock]['timeZoneFullName'])
-    url = selection.asset_profile[selected_stock]['website']
+    st.sidebar.header(selection.info['longName'])
+    sideBarHelper("Sector: " + selection.info['sector'])
+    sideBarHelper("Financial Currency: " + selection.info['currency'])
+    sideBarHelper("Exchange: " + selection.info['exchange'])
+    sideBarHelper("Timezone: " + selection.info['timezone'])
+    url = selection.info['website']
     st.sidebar.markdown("[Visit website](%s)" % url)
-    st.sidebar.success(selection.financial_data[selected_stock]['recommendationKey'].capitalize())
+    st.sidebar.success(selection.recommendations['buyHoldSell'].capitalize())
 
 def stockPricesToday():
-    today_data = {'Current Price': [selection.financial_data[selected_stock]['currentPrice']],
-                  'Previous Close': [selection.summary_detail[selected_stock]['regularMarketPreviousClose']],
-                  'Open': [selection.summary_detail[selected_stock]['open']],
-                  'Day Low': [selection.summary_detail[selected_stock]['dayLow']],
-                  'Day High': [selection.summary_detail[selected_stock]['dayHigh']]
+    today_data = {'Current Price': [selection.history(period='1d')['Close'].iloc[-1]],
+                  'Previous Close': [selection.history(period='1d')['Close'].iloc[-2]],
+                  'Open': [selection.history(period='1d')['Open'].iloc[-1]],
+                  'Day Low': [selection.history(period='1d')['Low'].iloc[-1]],
+                  'Day High': [selection.history(period='1d')['High'].iloc[-1]]
                   }
 
     df = pd.DataFrame(today_data)
     col1, col2 = st.columns(2)
-    priceChangeToday = selection.financial_data[selected_stock]['currentPrice'] - \
-        selection.summary_detail[selected_stock]['open']  # Current Price - Previous Closing
-    col1.metric(label="Current Price, Change w.r.t Opening Price", value='%.2f' % selection.financial_data[selected_stock]['currentPrice'],
+    priceChangeToday = selection.history(period='1d')['Close'].iloc[-1] - \
+        selection.history(period='1d')['Open'].iloc[-1]  # Current Price - Previous Closing
+    col1.metric(label="Current Price, Change w.r.t Opening Price", value='%.2f' % selection.history(period='1d')['Close'].iloc[-1],
                 delta='%.2f' % priceChangeToday)
 
     priceChangeYesterday = data['close'][len(data) - 1] - data['close'][len(data) - 2] if len(data) >= 2 else 0
@@ -75,30 +73,29 @@ def stockPricesToday():
 
     st.dataframe(df)
 
-# Modify the load_data function to use the custom session with curl_cffi
-def load_data(_ticker):
-    session = curl_requests.Session(impersonate="chrome")  # Using curl_cffi to simulate Chrome browser
-    historicData = _ticker.history(interval='1d', start=START, end=TODAY, session=session)
-    historicData.reset_index(inplace=True)
-    return historicData
+# Use yfinance to load data
+def load_data(symbol):
+    data = yf.Ticker(symbol)
+    historic_data = data.history(period="1y")  # Fetch data for 1 year by default
+    historic_data.reset_index(inplace=True)
+    return historic_data
 
 def plot_raw_data():
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=data['date'], y=data['open'], name="stock_open"))
-    fig.add_trace(go.Scatter(x=data['date'], y=data['close'], name="stock_close"))
+    fig.add_trace(go.Scatter(x=data['Date'], y=data['Open'], name="stock_open"))
+    fig.add_trace(go.Scatter(x=data['Date'], y=data['Close'], name="stock_close"))
     fig.layout.update(title_text='Time Series data with Rangeslider', xaxis_rangeslider_visible=True)
     st.plotly_chart(fig)
 
     fig = go.Figure()
     lastThirtyDays = data.tail(30)
-    fig.add_trace(go.Candlestick(x=lastThirtyDays['date'], open=lastThirtyDays['open'],
-                                 high=lastThirtyDays['high'], low=lastThirtyDays['low'],
-                                 close=lastThirtyDays['close']))
+    fig.add_trace(go.Candlestick(x=lastThirtyDays['Date'], open=lastThirtyDays['Open'], high=lastThirtyDays['High'],
+                                 low=lastThirtyDays['Low'], close=lastThirtyDays['Close']))
     fig.layout.update(title_text='Candle Stick Chart - Past 30 Days Trend', xaxis_rangeslider_visible=True)
     st.plotly_chart(fig)
 
 def pastTrends():
-    st.info(selection.asset_profile[selected_stock]['longBusinessSummary'])
+    st.info(selection.info['longBusinessSummary'])
     st.subheader('Today')
     stockPricesToday()
     st.subheader('Last 5 Days Trend')
@@ -114,7 +111,7 @@ def predictingTheStockPrices():
         else:
             period += 365
 
-    df_train = data[['date', 'close']].rename(columns={"date": "ds", "close": "y"})
+    df_train = data[['Date', 'Close']].rename(columns={"Date": "ds", "Close": "y"})
     model_param = {
         "daily_seasonality": False,
         "weekly_seasonality": False,
@@ -157,18 +154,17 @@ try:
     stock = st.sidebar.text_input("Symbol", value='GOOG')
     selected_stock = stock
 
-    selection = Ticker(selected_stock)
-    data = load_data(selection)
+    data = load_data(selected_stock)
 
     if option == 'Past Trends':
-        company_name = selection.price[selected_stock]['longName']
+        company_name = selected_stock
         st.subheader(company_name + "'s Stocks")
         populateSideBar()
         pastTrends()
         plot_raw_data()
 
     if option == 'Predict Stock Price':
-        company_name = selection.price[selected_stock]['longName']
+        company_name = selected_stock
         st.subheader(company_name + "'s Stocks")
         populateSideBar()
         predictingTheStockPrices()
