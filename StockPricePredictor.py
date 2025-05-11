@@ -11,7 +11,6 @@ import constants
 import json
 import time
 from requests.exceptions import RequestException
-from yahooquery.utils import YahooFinanceError
 
 # ثابت
 START = "2016-01-01"
@@ -96,7 +95,7 @@ def load_data(_ticker):
                 raise ValueError("Empty data returned")
             historicData.reset_index(inplace=True)
             return historicData
-        except (RequestException, YahooFinanceError, ValueError) as e:
+        except (RequestException, ValueError) as e:
             attempts += 1
             wait_time = 3 * attempts
             st.warning(f"Attempt {attempts} failed. Retrying in {wait_time}s...")
