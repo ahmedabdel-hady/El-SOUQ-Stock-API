@@ -9,14 +9,24 @@ import config
 import requests
 import constants
 import json
+import time
+from requests.exceptions import RequestException
+from yahooquery.utils import YahooFinanceError
 
+# ثابت
+START = "2016-01-01"
+TODAY = date.today().strftime("%Y-%m-%d")
+year = int(TODAY[:4])
+api_key = 'd11f123b13714c05b3ee95bb809265af'
 countries = constants.countries
 
 
+# جلب أخبار الأعمال
 def business_news_feed():
     select_country = st.sidebar.selectbox("Select Country: ", countries.keys())
     st.header('NEWS FEED')
-    r = requests.get('https://newsapi.org/v2/top-headlines?country=' + countries[select_country] + '&category=business&apikey=' + api_key)
+    r = requests.get('https://newsapi.org/v2/top-headlines?country=' + countries[select_country] +
+                     '&category=business&apikey=' + api_key)
     data_news = json.loads(r.content)
     length = min(15, len(data_news['articles']))
     for i in range(length):
@@ -28,17 +38,12 @@ def business_news_feed():
             st.image(image)
         except:
             pass
-        else:
-            pass
 
         content = data_news['articles'][i]['content']
         st.write(content)
 
         url = data_news['articles'][i]['url']
         st.write(url)
-
-# Replace 'api_key' with your actual API key
-api_key = 'd11f123b13714c05b3ee95bb809265af'
 
 
 def isLeapYear(y):
@@ -50,20 +55,14 @@ def sideBarHelper(text):
 
 
 def populateSideBar():
-    # st.sidebar.image(selection.summary_detail[selected_stock]['logo_url'])
     st.sidebar.header(selection.price[selected_stock]['shortName'])
-    sideBarHelper(
-        "Sector: " + selection.summary_profile[selected_stock]['sector'])
-    sideBarHelper("Financial Currency: " +
-                  selection.financial_data[selected_stock]['financialCurrency'])
-    sideBarHelper(
-        "Exchange: " + selection.price[selected_stock]['exchangeName'])
-    sideBarHelper(
-        "Timezone: " + selection.quote_type[selected_stock]['timeZoneFullName'])
+    sideBarHelper("Sector: " + selection.summary_profile[selected_stock]['sector'])
+    sideBarHelper("Financial Currency: " + selection.financial_data[selected_stock]['financialCurrency'])
+    sideBarHelper("Exchange: " + selection.price[selected_stock]['exchangeName'])
+    sideBarHelper("Timezone: " + selection.quote_type[selected_stock]['timeZoneFullName'])
     url = selection.asset_profile[selected_stock]['website']
     st.sidebar.markdown("[Visit website](%s)" % url)
-    st.sidebar.success(
-        selection.financial_data[selected_stock]['recommendationKey'].capitalize())
+    st.sidebar.success(selection.financial_data[selected_stock]['recommendationKey'].capitalize())
 
 
 def stockPricesToday():
@@ -77,43 +76,49 @@ def stockPricesToday():
     df = pd.DataFrame(today_data)
     col1, col2 = st.columns(2)
     priceChangeToday = selection.financial_data[selected_stock]['currentPrice'] - \
-        selection.summary_detail[selected_stock]['open']  # Current Price - Previous Closing
-    col1.metric(label="Current Price, Change w.r.t Opening Price", value='%.2f' % selection.financial_data[selected_stock]['currentPrice'],
-                delta='%.2f' % priceChangeToday)
+        selection.summary_detail[selected_stock]['open']
+    col1.metric(label="Current Price, Change w.r.t Opening Price", value='%.2f' %
+                selection.financial_data[selected_stock]['currentPrice'], delta='%.2f' % priceChangeToday)
 
-    priceChangeYesterday = data['close'][len(
-        data) - 1] - data['close'][len(data) - 2] if len(data) >= 2 else 0
-    col2.metric(label="Previous Closing, Previous Day Change", value='%.2f' % data['close'][len(data) - 1],
-                delta='%.2f' % priceChangeYesterday)
+    priceChangeYesterday = data['close'].iloc[-1] - data['close'].iloc[-2] if len(data) >= 2 else 0
+    col2.metric(label="Previous Closing, Previous Day Change", value='%.2f' %
+                data['close'].iloc[-1], delta='%.2f' % priceChangeYesterday)
 
     st.dataframe(df)
 
 
 def load_data(_ticker):
-    historicData = _ticker.history(interval='1d', start=START, end=TODAY)
-    historicData.reset_index(inplace=True)
-    return historicData
+    attempts = 0
+    while attempts < 5:
+        try:
+            historicData = _ticker.history(interval='1d', start=START, end=TODAY)
+            if historicData.empty:
+                raise ValueError("Empty data returned")
+            historicData.reset_index(inplace=True)
+            return historicData
+        except (RequestException, YahooFinanceError, ValueError) as e:
+            attempts += 1
+            wait_time = 3 * attempts
+            st.warning(f"Attempt {attempts} failed. Retrying in {wait_time}s...")
+            time.sleep(wait_time)
+
+    st.error("Failed to fetch data from Yahoo Finance after multiple attempts.")
+    st.stop()
 
 
 def plot_raw_data():
-    # Plotting the raw data
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=data['date'],
-                  y=data['open'], name="stock_open"))
-    fig.add_trace(go.Scatter(x=data['date'],
-                  y=data['close'], name="stock_close"))
-    fig.layout.update(
-        title_text='Time Series data with Rangeslider', xaxis_rangeslider_visible=True)
+    fig.add_trace(go.Scatter(x=data['date'], y=data['open'], name="stock_open"))
+    fig.add_trace(go.Scatter(x=data['date'], y=data['close'], name="stock_close"))
+    fig.layout.update(title_text='Time Series data with Rangeslider', xaxis_rangeslider_visible=True)
     st.plotly_chart(fig)
 
     fig = go.Figure()
     lastThirtyDays = data.tail(30)
-    fig.add_trace(go.Candlestick(x=lastThirtyDays['date'], open=lastThirtyDays['open'], high=lastThirtyDays['high'],
-                                 low=lastThirtyDays['low'],
-
+    fig.add_trace(go.Candlestick(x=lastThirtyDays['date'], open=lastThirtyDays['open'],
+                                 high=lastThirtyDays['high'], low=lastThirtyDays['low'],
                                  close=lastThirtyDays['close']))
-    fig.layout.update(
-        title_text='Candle Stick Chart - Past 30 Days Trend', xaxis_rangeslider_visible=True)
+    fig.layout.update(title_text='Candle Stick Chart - Past 30 Days Trend', xaxis_rangeslider_visible=True)
     st.plotly_chart(fig)
 
 
@@ -121,7 +126,6 @@ def pastTrends():
     st.info(selection.asset_profile[selected_stock]['longBusinessSummary'])
     st.subheader('Today')
     stockPricesToday()
-
     st.subheader('Last 5 Days Trend')
     st.write(data.tail())
 
@@ -136,9 +140,7 @@ def predictingTheStockPrices():
         else:
             period += 365
 
-    df_train = data[['date', 'close']]
-    df_train = df_train.rename(columns={"date": "ds", "close": "y"})
-
+    df_train = data[['date', 'close']].rename(columns={"date": "ds", "close": "y"})
     model_param = {
         "daily_seasonality": False,
         "weekly_seasonality": False,
@@ -148,7 +150,6 @@ def predictingTheStockPrices():
     }
 
     m = Prophet(**model_param)
-
     m = m.add_seasonality(name="monthly", period=30, fourier_order=10)
     m = m.add_seasonality(name="quarterly", period=92.25, fourier_order=10)
 
@@ -158,7 +159,6 @@ def predictingTheStockPrices():
     future['cap'] = df_train['cap'].max()
     forecast = m.predict(future)
 
-    # Showing and plotting the forecast
     st.subheader('Forecast data')
     st.write(forecast)
 
@@ -171,50 +171,56 @@ def predictingTheStockPrices():
     st.write(fig2)
 
 
-# Driver
-START = "2016-01-01"
-TODAY = date.today().strftime("%Y-%m-%d")
-year = int(TODAY[: 4])
+# === Main App ===
 
 st.title('ElSOUQ: STOCK FORECAST APP')
 
-try:
-    option = st.sidebar.selectbox("Which Dashboard?", ('Past Trends', 'Predict Stock Price', 'Trending Business News'),
-                                  0)
-    stock = st.sidebar.text_input("Symbol", value='GOOG')
-    selected_stock = stock
+option = st.sidebar.selectbox("Which Dashboard?", ('Past Trends', 'Predict Stock Price', 'Trending Business News'), 0)
+stock = st.sidebar.text_input("Symbol", value='GOOG')
+selected_stock = stock
 
-    selection = Ticker(selected_stock)
-    data = load_data(selection)
+# زر تحميل البيانات يدويًا
+if st.sidebar.button("Fetch Stock Data"):
+    try:
+        with st.spinner("Fetching stock data..."):
+            selection = Ticker(selected_stock)
+            data = load_data(selection)
+            st.session_state['data'] = data
+            st.session_state['selection'] = selection
+            st.success(f"Data loaded for {selected_stock}")
+    except Exception as e:
+        st.error(f"Error loading data: {e}")
+else:
+    data = st.session_state.get('data', None)
+    selection = st.session_state.get('selection', None)
 
-    if option == 'Past Trends':
-        company_name = selection.price[selected_stock]['longName']
-        st.subheader(company_name + "'s Stocks")
-        populateSideBar()
-        pastTrends()
-        plot_raw_data()
+if data is not None and selection is not None:
+    try:
+        if option == 'Past Trends':
+            company_name = selection.price[selected_stock]['longName']
+            st.subheader(company_name + "'s Stocks")
+            populateSideBar()
+            pastTrends()
+            plot_raw_data()
 
-    if option == 'Predict Stock Price':
-        # Predicting the forecast with Prophet.
-        company_name = selection.price[selected_stock]['longName']
-        st.subheader(company_name + "'s Stocks")
-        populateSideBar()
-        predictingTheStockPrices()
+        elif option == 'Predict Stock Price':
+            company_name = selection.price[selected_stock]['longName']
+            st.subheader(company_name + "'s Stocks")
+            populateSideBar()
+            predictingTheStockPrices()
 
-    if option == 'Trending Business News':
-        business_news_feed()
+        elif option == 'Trending Business News':
+            business_news_feed()
 
-except KeyError:
-    st.error('This company is not listed !')
-
-except FileNotFoundError:
-    st.error('No data is available about this stock !')
-
-except TypeError:
-    st.error('No data is available about this stock !')
-
-except ValueError:
-    st.error('Symbol cannot be empty !')
-
-except ConnectionError:
-    st.error('Could not connect to the internet :(')
+    except KeyError:
+        st.error('This company is not listed !')
+    except FileNotFoundError:
+        st.error('No data is available about this stock !')
+    except TypeError:
+        st.error('No data is available about this stock !')
+    except ValueError:
+        st.error('Symbol cannot be empty !')
+    except ConnectionError:
+        st.error('Could not connect to the internet :(')
+else:
+    st.info("Please click 'Fetch Stock Data' to load the selected stock.")
