@@ -9,9 +9,12 @@ import config
 import requests
 import constants
 import json
+from curl_cffi import requests as curl_requests  # Importing curl_cffi for the requests module
 
 countries = constants.countries
 
+# Replace 'api_key' with your actual API key
+api_key = 'd11f123b13714c05b3ee95bb809265af'
 
 def business_news_feed():
     select_country = st.sidebar.selectbox("Select Country: ", countries.keys())
@@ -28,8 +31,6 @@ def business_news_feed():
             st.image(image)
         except:
             pass
-        else:
-            pass
 
         content = data_news['articles'][i]['content']
         st.write(content)
@@ -37,34 +38,21 @@ def business_news_feed():
         url = data_news['articles'][i]['url']
         st.write(url)
 
-# Replace 'api_key' with your actual API key
-api_key = 'd11f123b13714c05b3ee95bb809265af'
-
-
 def isLeapYear(y):
     return (y % 4 == 0 and y % 100 != 0) or (y % 400 == 0)
-
 
 def sideBarHelper(text):
     st.sidebar.text(text)
 
-
 def populateSideBar():
-    # st.sidebar.image(selection.summary_detail[selected_stock]['logo_url'])
     st.sidebar.header(selection.price[selected_stock]['shortName'])
-    sideBarHelper(
-        "Sector: " + selection.summary_profile[selected_stock]['sector'])
-    sideBarHelper("Financial Currency: " +
-                  selection.financial_data[selected_stock]['financialCurrency'])
-    sideBarHelper(
-        "Exchange: " + selection.price[selected_stock]['exchangeName'])
-    sideBarHelper(
-        "Timezone: " + selection.quote_type[selected_stock]['timeZoneFullName'])
+    sideBarHelper("Sector: " + selection.summary_profile[selected_stock]['sector'])
+    sideBarHelper("Financial Currency: " + selection.financial_data[selected_stock]['financialCurrency'])
+    sideBarHelper("Exchange: " + selection.price[selected_stock]['exchangeName'])
+    sideBarHelper("Timezone: " + selection.quote_type[selected_stock]['timeZoneFullName'])
     url = selection.asset_profile[selected_stock]['website']
     st.sidebar.markdown("[Visit website](%s)" % url)
-    st.sidebar.success(
-        selection.financial_data[selected_stock]['recommendationKey'].capitalize())
-
+    st.sidebar.success(selection.financial_data[selected_stock]['recommendationKey'].capitalize())
 
 def stockPricesToday():
     today_data = {'Current Price': [selection.financial_data[selected_stock]['currentPrice']],
@@ -81,50 +69,40 @@ def stockPricesToday():
     col1.metric(label="Current Price, Change w.r.t Opening Price", value='%.2f' % selection.financial_data[selected_stock]['currentPrice'],
                 delta='%.2f' % priceChangeToday)
 
-    priceChangeYesterday = data['close'][len(
-        data) - 1] - data['close'][len(data) - 2] if len(data) >= 2 else 0
+    priceChangeYesterday = data['close'][len(data) - 1] - data['close'][len(data) - 2] if len(data) >= 2 else 0
     col2.metric(label="Previous Closing, Previous Day Change", value='%.2f' % data['close'][len(data) - 1],
                 delta='%.2f' % priceChangeYesterday)
 
     st.dataframe(df)
 
-
+# Modify the load_data function to use the custom session with curl_cffi
 def load_data(_ticker):
-    historicData = _ticker.history(interval='1d', start=START, end=TODAY)
+    session = curl_requests.Session(impersonate="chrome")  # Using curl_cffi to simulate Chrome browser
+    historicData = _ticker.history(interval='1d', start=START, end=TODAY, session=session)
     historicData.reset_index(inplace=True)
     return historicData
 
-
 def plot_raw_data():
-    # Plotting the raw data
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=data['date'],
-                  y=data['open'], name="stock_open"))
-    fig.add_trace(go.Scatter(x=data['date'],
-                  y=data['close'], name="stock_close"))
-    fig.layout.update(
-        title_text='Time Series data with Rangeslider', xaxis_rangeslider_visible=True)
+    fig.add_trace(go.Scatter(x=data['date'], y=data['open'], name="stock_open"))
+    fig.add_trace(go.Scatter(x=data['date'], y=data['close'], name="stock_close"))
+    fig.layout.update(title_text='Time Series data with Rangeslider', xaxis_rangeslider_visible=True)
     st.plotly_chart(fig)
 
     fig = go.Figure()
     lastThirtyDays = data.tail(30)
-    fig.add_trace(go.Candlestick(x=lastThirtyDays['date'], open=lastThirtyDays['open'], high=lastThirtyDays['high'],
-                                 low=lastThirtyDays['low'],
-
+    fig.add_trace(go.Candlestick(x=lastThirtyDays['date'], open=lastThirtyDays['open'],
+                                 high=lastThirtyDays['high'], low=lastThirtyDays['low'],
                                  close=lastThirtyDays['close']))
-    fig.layout.update(
-        title_text='Candle Stick Chart - Past 30 Days Trend', xaxis_rangeslider_visible=True)
+    fig.layout.update(title_text='Candle Stick Chart - Past 30 Days Trend', xaxis_rangeslider_visible=True)
     st.plotly_chart(fig)
-
 
 def pastTrends():
     st.info(selection.asset_profile[selected_stock]['longBusinessSummary'])
     st.subheader('Today')
     stockPricesToday()
-
     st.subheader('Last 5 Days Trend')
     st.write(data.tail())
-
 
 def predictingTheStockPrices():
     period = 0
@@ -136,9 +114,7 @@ def predictingTheStockPrices():
         else:
             period += 365
 
-    df_train = data[['date', 'close']]
-    df_train = df_train.rename(columns={"date": "ds", "close": "y"})
-
+    df_train = data[['date', 'close']].rename(columns={"date": "ds", "close": "y"})
     model_param = {
         "daily_seasonality": False,
         "weekly_seasonality": False,
@@ -148,7 +124,6 @@ def predictingTheStockPrices():
     }
 
     m = Prophet(**model_param)
-
     m = m.add_seasonality(name="monthly", period=30, fourier_order=10)
     m = m.add_seasonality(name="quarterly", period=92.25, fourier_order=10)
 
@@ -158,7 +133,6 @@ def predictingTheStockPrices():
     future['cap'] = df_train['cap'].max()
     forecast = m.predict(future)
 
-    # Showing and plotting the forecast
     st.subheader('Forecast data')
     st.write(forecast)
 
@@ -169,7 +143,6 @@ def predictingTheStockPrices():
     st.write("Forecast components - Yearly, Monthly and Quarterly Trends")
     fig2 = m.plot_components(forecast)
     st.write(fig2)
-
 
 # Driver
 START = "2016-01-01"
@@ -195,7 +168,6 @@ try:
         plot_raw_data()
 
     if option == 'Predict Stock Price':
-        # Predicting the forecast with Prophet.
         company_name = selection.price[selected_stock]['longName']
         st.subheader(company_name + "'s Stocks")
         populateSideBar()
