@@ -9,7 +9,7 @@ import requests
 import json
 
 # Constants
-START = "2017-01-01"
+START = "2016-01-01"
 TODAY = date.today().strftime("%Y-%m-%d")
 year = int(TODAY[:4])
 api_key = 'd11f123b13714c05b3ee95bb809265af'
