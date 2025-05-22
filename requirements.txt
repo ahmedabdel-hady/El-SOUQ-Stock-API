@@ -11,4 +11,3 @@ pytz>=2022.5
 spyder==5.5.0
 yahooquery==2.3.7
 yfinance
-curl-cffi
