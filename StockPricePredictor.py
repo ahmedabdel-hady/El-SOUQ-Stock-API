@@ -11,10 +11,6 @@ import constants
 import json
 
 countries = constants.countries
-@st.cache_data
-def get_ticker_data(stock_symbol):
-    return Ticker(stock_symbol)
-
 def business_news_feed():
     select_country = st.sidebar.selectbox("Select Country: ", countries.keys())
     st.header('NEWS FEED')
