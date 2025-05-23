@@ -184,7 +184,7 @@ try:
     stock = st.sidebar.text_input("Symbol", value='GOOG')
     selected_stock = stock
 
-    selection = Ticker(selected_stock)
+    selection = yf.Ticker(selected_stock)
     data = load_data(selection)
 
     if option == 'Past Trends':
