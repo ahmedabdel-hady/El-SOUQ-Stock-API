@@ -75,20 +75,26 @@ def stockPricesToday(stock_obj):
 
     df = pd.DataFrame(today_data)
     col1, col2 = st.columns(2)
+
     priceChangeToday = info.get('currentPrice', 0) - info.get('open', 0)
-    col1.metric(label="Current Price, Change w.r.t Opening Price",
-                value='%.2f' % info.get('currentPrice', 0),
-                delta='%.2f' % priceChangeToday)
+    col1.metric(
+        label="Current Price, Change w.r.t Opening Price",
+        value='%.2f' % info.get('currentPrice', 0),
+        delta='%.2f' % priceChangeToday
+    )
 
     try:
-        priceChangeYesterday = data['Close'].iloc[-1] - data['Close'].iloc[-2]
+        priceChangeYesterday = float(data['Close'].iloc[-1] - data['Close'].iloc[-2])
+        last_close = float(data['Close'].iloc[-1])
     except:
         priceChangeYesterday = 0
-    last_close = float(data['Close'].iloc[-1])
-col2.metric(label="Previous Closing, Previous Day Change",
-            value='%.2f' % last_close,
-            delta='%.2f' % priceChangeYesterday)
+        last_close = 0
 
+    col2.metric(
+        label="Previous Closing, Previous Day Change",
+        value='%.2f' % last_close,
+        delta='%.2f' % priceChangeYesterday
+    )
 
     st.dataframe(df)
 
