@@ -84,9 +84,11 @@ def stockPricesToday(stock_obj):
         priceChangeYesterday = data['Close'].iloc[-1] - data['Close'].iloc[-2]
     except:
         priceChangeYesterday = 0
-    col2.metric(label="Previous Closing, Previous Day Change",
-                value='%.2f' % data['Close'].iloc[-1],
-                delta='%.2f' % priceChangeYesterday)
+    last_close = float(data['Close'].iloc[-1])
+col2.metric(label="Previous Closing, Previous Day Change",
+            value='%.2f' % last_close,
+            delta='%.2f' % priceChangeYesterday)
+
 
     st.dataframe(df)
 
