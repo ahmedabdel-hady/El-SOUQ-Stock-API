@@ -1,8 +1,8 @@
 import streamlit as st
 from datetime import date
 from yahooquery import Ticker
-from fbprophet import Prophet
-from fbprophet.plot import plot_plotly
+from prophet import Prophet
+from prophet.plot import plot_plotly
 import pandas as pd
 from plotly import graph_objs as go
 import config
@@ -38,7 +38,7 @@ def business_news_feed():
         st.write(url)
 
 # Replace 'api_key' with your actual API key
-api_key = 'f2cb4ed05496493589aabeb3bbb38699'
+api_key = 'd11f123b13714c05b3ee95bb809265af'
 
 
 def isLeapYear(y):
