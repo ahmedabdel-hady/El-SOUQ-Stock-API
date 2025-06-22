@@ -116,17 +116,6 @@ def predictingTheStockPrices():
     forecast.set_index("ds", inplace=True)
     predicted = forecast.loc[actual.index]["yhat"]
 
-    mae = mean_absolute_error(actual, predicted)
-    rmse = mean_squared_error(actual, predicted, squared=False)
-    r2 = r2_score(actual, predicted)
-
-    st.success(f"""✅ **Model Evaluation (Last {test_days} Days)**  
-- **MAE**: {mae:.2f}  
-- **RMSE**: {rmse:.2f}  
-- **R² Score**: {r2:.2f}  
-The model shows how accurately it forecasts recent stock performance.""")
-
-
 
 
 # Driver
